@@ -1,93 +1,216 @@
 import './style.css'
 
-// --- Fluid Nebula Background (Redesign 4.0) ---
+// --- Interactive Galaxy Background (Redesign 5.0) ---
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
 let width, height;
-let blobs = [];
+let stars = [];
+let planets = [];
+let meteors = [];
 
 // Configuration
-const BLOB_COUNT = 6;
-const COLORS = ['#ff2d55', '#00f2ea', '#7000ff', '#1a0b2e']; // Coral, Cyan, Purple, Dark
+const STAR_COUNT = 200;
+const PLANET_COUNT = 8;
+const COLORS = ['#FF1ED1', '#2A135A', '#00f3ff', '#ffffff']; // Pink, Purple, Cyan, White
 
 function resize() {
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
-  initBlobs();
+  initGalaxy();
 }
 
-class Blob {
+class Star {
   constructor() {
     this.x = Math.random() * width;
     this.y = Math.random() * height;
-    this.vx = (Math.random() - 0.5) * 0.5;
-    this.vy = (Math.random() - 0.5) * 0.5;
-    this.radius = 200 + Math.random() * 300;
-    this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
-    this.angle = Math.random() * Math.PI * 2;
-    this.speed = 0.002 + Math.random() * 0.003;
+    this.size = Math.random() * 2;
+    this.alpha = Math.random();
+    this.blinkSpeed = 0.005 + Math.random() * 0.01;
+  }
+
+  update() {
+    this.alpha += this.blinkSpeed;
+    if (this.alpha > 1 || this.alpha < 0) this.blinkSpeed *= -1;
+  }
+
+  draw() {
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(this.alpha)})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+class Planet {
+  constructor() {
+    this.radius = 15 + Math.random() * 30;
+    this.x = Math.random() * (width - this.radius * 2) + this.radius;
+    this.y = Math.random() * (height - this.radius * 2) + this.radius;
+    this.vx = (Math.random() - 0.5) * 1.5;
+    this.vy = (Math.random() - 0.5) * 1.5;
+    this.mass = this.radius;
+    this.color = COLORS[Math.floor(Math.random() * (COLORS.length - 1))]; // Exclude white
+    this.glow = 10 + Math.random() * 20;
   }
 
   update() {
     this.x += this.vx;
     this.y += this.vy;
-    this.angle += this.speed;
 
-    // Bounce off edges (softly)
-    if (this.x < -this.radius) this.vx = Math.abs(this.vx);
-    if (this.x > width + this.radius) this.vx = -Math.abs(this.vx);
-    if (this.y < -this.radius) this.vy = Math.abs(this.vy);
-    if (this.y > height + this.radius) this.vy = -Math.abs(this.vy);
+    // Wall Collisions
+    if (this.x - this.radius < 0 || this.x + this.radius > width) this.vx *= -1;
+    if (this.y - this.radius < 0 || this.y + this.radius > height) this.vy *= -1;
 
-    // Mouse Interaction (Push)
+    // Mouse Interaction (Repulsion)
     if (mouse.x != null) {
       const dx = this.x - mouse.x;
       const dy = this.y - mouse.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < 300) {
-        this.x += dx * 0.01;
-        this.y += dy * 0.01;
+      if (dist < 200) {
+        const force = (200 - dist) / 200;
+        this.vx += (dx / dist) * force * 0.5;
+        this.vy += (dy / dist) * force * 0.5;
       }
     }
   }
 
   draw() {
-    // We'll draw these as large radial gradients
-    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-    gradient.addColorStop(0, this.color);
-    gradient.addColorStop(1, 'rgba(26, 11, 46, 0)'); // Fade to bg color
-
-    ctx.globalCompositeOperation = 'screen'; // Blend mode for vibrant overlap
-    ctx.fillStyle = gradient;
+    ctx.shadowBlur = this.glow;
+    ctx.shadowColor = this.color;
+    ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.globalCompositeOperation = 'source-over'; // Reset
+    ctx.shadowBlur = 0; // Reset
   }
 }
 
-function initBlobs() {
-  blobs = [];
-  for (let i = 0; i < BLOB_COUNT; i++) {
-    blobs.push(new Blob());
+class Meteor {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.x = Math.random() * width;
+    this.y = -100;
+    this.length = 50 + Math.random() * 100;
+    this.speed = 10 + Math.random() * 10;
+    this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.2; // Mostly diagonal down-right
+    this.active = false;
+    this.timer = Math.random() * 200; // Random delay
+  }
+
+  update() {
+    if (this.timer > 0) {
+      this.timer--;
+      return;
+    }
+
+    this.active = true;
+    this.x += Math.cos(this.angle) * this.speed;
+    this.y += Math.sin(this.angle) * this.speed;
+
+    if (this.y > height + 100 || this.x > width + 100) {
+      this.reset();
+    }
+  }
+
+  draw() {
+    if (!this.active) return;
+
+    const gradient = ctx.createLinearGradient(this.x, this.y, this.x - Math.cos(this.angle) * this.length, this.y - Math.sin(this.angle) * this.length);
+    gradient.addColorStop(0, '#FF1ED1'); // Neon Pink Head
+    gradient.addColorStop(1, 'rgba(255, 30, 209, 0)'); // Transparent Tail
+
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x - Math.cos(this.angle) * this.length, this.y - Math.sin(this.angle) * this.length);
+    ctx.stroke();
   }
 }
 
-function animateBlobs() {
+// Collision Detection (Elastic)
+function resolveCollisions() {
+  for (let i = 0; i < planets.length; i++) {
+    for (let j = i + 1; j < planets.length; j++) {
+      const p1 = planets[i];
+      const p2 = planets[j];
+
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < p1.radius + p2.radius) {
+        // Collision detected
+        const angle = Math.atan2(dy, dx);
+        const sin = Math.sin(angle);
+        const cos = Math.cos(angle);
+
+        // Rotate velocities
+        const vx1 = p1.vx * cos + p1.vy * sin;
+        const vy1 = p1.vy * cos - p1.vx * sin;
+        const vx2 = p2.vx * cos + p2.vy * sin;
+        const vy2 = p2.vy * cos - p2.vx * sin;
+
+        // Elastic collision formula
+        const vx1Final = ((p1.mass - p2.mass) * vx1 + 2 * p2.mass * vx2) / (p1.mass + p2.mass);
+        const vx2Final = ((p2.mass - p1.mass) * vx2 + 2 * p1.mass * vx1) / (p1.mass + p2.mass);
+
+        // Update velocities (rotate back)
+        p1.vx = vx1Final * cos - vy1 * sin;
+        p1.vy = vy1 * cos + vx1Final * sin;
+        p2.vx = vx2Final * cos - vy2 * sin;
+        p2.vy = vy2 * cos + vx2Final * sin;
+
+        // Separate planets to prevent sticking
+        const overlap = (p1.radius + p2.radius - dist) / 2;
+        p1.x -= overlap * cos;
+        p1.y -= overlap * sin;
+        p2.x += overlap * cos;
+        p2.y += overlap * sin;
+      }
+    }
+  }
+}
+
+function initGalaxy() {
+  stars = [];
+  planets = [];
+  meteors = [];
+
+  for (let i = 0; i < STAR_COUNT; i++) stars.push(new Star());
+  for (let i = 0; i < PLANET_COUNT; i++) planets.push(new Planet());
+  for (let i = 0; i < 3; i++) meteors.push(new Meteor()); // 3 active meteors max
+}
+
+function animateGalaxy() {
   ctx.clearRect(0, 0, width, height);
 
-  // Draw a base dark layer
-  ctx.fillStyle = '#1a0b2e';
-  ctx.fillRect(0, 0, width, height);
-
-  blobs.forEach(blob => {
-    blob.update();
-    blob.draw();
+  // Draw Stars
+  stars.forEach(star => {
+    star.update();
+    star.draw();
   });
 
-  requestAnimationFrame(animateBlobs);
+  // Update & Draw Meteors
+  meteors.forEach(meteor => {
+    meteor.update();
+    meteor.draw();
+  });
+
+  // Update & Draw Planets
+  planets.forEach(planet => {
+    planet.update();
+    planet.draw();
+  });
+
+  resolveCollisions();
+
+  requestAnimationFrame(animateGalaxy);
 }
 
 // Interactions
@@ -108,11 +231,10 @@ window.addEventListener('resize', () => {
 
 // Init
 resize();
-animateBlobs();
+animateGalaxy();
 
 
 // --- Countdown Timer (Preserved) ---
-// Set event date to Dec 15, 2025
 const eventDate = new Date('2025-12-15T09:00:00');
 
 function updateTimer() {
@@ -136,9 +258,9 @@ function updateTimer() {
 }
 
 setInterval(updateTimer, 1000);
-updateTimer(); // Initial call
+updateTimer();
 
-// --- Smooth Scroll (Preserved) ---
+// --- Smooth Scroll & Reveal (Preserved) ---
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -148,7 +270,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// --- Scroll Reveal Animations (Preserved) ---
 const observerOptions = {
   threshold: 0.1,
   rootMargin: "0px 0px -50px 0px"
@@ -158,7 +279,7 @@ const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       entry.target.classList.add('visible');
-      observer.unobserve(entry.target); // Only animate once
+      observer.unobserve(entry.target);
     }
   });
 }, observerOptions);
