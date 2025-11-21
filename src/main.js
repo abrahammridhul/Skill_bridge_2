@@ -1,137 +1,138 @@
 import './style.css'
 
-// --- Silk Ribbon Bridge Background ---
+// --- Synapse Bridge Background (Redesign 3.0) ---
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
 let width, height;
-let ribbons = [];
-let time = 0;
-let pulseActive = false;
-let pulseProgress = 0;
+let particles = [];
+let nodes = [];
 
 // Configuration
-const RIBBON_COUNT = 15;
-const BASE_Y = 0.6; // Vertical position (0.0 - 1.0)
-const BRIDGE_HEIGHT = 0.25; // How high the bridge arches
-const SPEED = 0.005;
+const PARTICLE_COUNT = 80;
+const NODE_COUNT = 15;
+const CONNECTION_DIST = 150;
+const MOUSE_DIST = 250;
 
 function resize() {
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
-  initRibbons();
+  initNetwork();
 }
 
-class Ribbon {
-  constructor(index) {
-    this.index = index;
-    this.offset = Math.random() * Math.PI * 2;
-    this.speed = SPEED + Math.random() * 0.002;
-    this.amplitude = 20 + Math.random() * 30;
-    this.frequency = 0.002 + Math.random() * 0.003;
-    this.color = index % 2 === 0 ? '#00f3ff' : '#9d00ff'; // Cyan or Purple
-    this.thickness = 1 + Math.random() * 2;
+class Entity {
+  constructor(x, y, isNode = false) {
+    this.x = x;
+    this.y = y;
+    this.isNode = isNode;
+    // Nodes are stable, Particles float
+    this.vx = isNode ? 0 : (Math.random() - 0.5) * 0.5;
+    this.vy = isNode ? 0 : (Math.random() - 0.5) * 0.5;
+    this.size = isNode ? 3 + Math.random() * 2 : 1.5;
+    this.color = isNode ? 'rgba(56, 189, 248, 0.8)' : 'rgba(148, 163, 184, 0.5)'; // Azure vs Slate
   }
 
-  draw(t) {
-    ctx.beginPath();
+  update() {
+    if (!this.isNode) {
+      this.x += this.vx;
+      this.y += this.vy;
 
-    // Start from left
-    for (let x = 0; x <= width; x += 5) {
-      // Normalized X (0.0 to 1.0)
-      const nx = x / width;
+      // Bounce off edges
+      if (this.x < 0 || this.x > width) this.vx *= -1;
+      if (this.y < 0 || this.y > height) this.vy *= -1;
 
-      // Bridge Arch Calculation (Parabola-ish)
-      // Peak at center (nx = 0.5), zero at edges
-      const bridgeArch = Math.sin(nx * Math.PI) * height * BRIDGE_HEIGHT;
-
-      // Base Sine Wave Flow
-      const wave = Math.sin(x * this.frequency + t * this.speed + this.offset) * this.amplitude;
-
-      // Turbulence from Mouse
-      let turbulence = 0;
+      // Mouse Interaction (Magnet)
       if (mouse.x != null) {
-        const dx = x - mouse.x;
-        // Y distance is approximate since we haven't calculated y yet, 
-        // but we can use the base y position
-        const dy = (height * BASE_Y - bridgeArch) - mouse.y;
+        const dx = mouse.x - this.x;
+        const dy = mouse.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 200) {
-          turbulence = Math.sin(dx * 0.05 + t * 0.1) * (200 - dist) * 0.2;
+
+        if (dist < MOUSE_DIST) {
+          // Gentle pull towards mouse
+          this.x += dx * 0.02;
+          this.y += dy * 0.02;
         }
       }
-
-      // Final Y Position
-      // Base Position - Bridge Arch + Wave + Turbulence
-      const y = (height * BASE_Y) - bridgeArch + wave + turbulence;
-
-      if (x === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
     }
+  }
 
-    // Pulse Effect (Click)
-    let lineWidth = this.thickness;
-    let alpha = 0.3; // Base opacity
-
-    if (pulseActive) {
-      // Pulse travels across the screen
-      // pulseProgress goes from 0 to width + padding
-      // We check if current ribbon part is near the pulse wave
-      // This is a simplification; for a true wave traveling along the line we'd need per-segment logic
-      // Instead, let's make the whole ribbon glow when the pulse passes "through" the ribbon index
-
-      // Alternative: Pulse travels horizontally
-      // We can't easily change line width per segment in one path.
-      // So we'll just brighten the whole ribbon based on time, or use a global glow
-
-      // Let's make the pulse a global brightness boost that fades out
-      const pulseStrength = Math.max(0, 1 - Math.abs(pulseProgress - 0.5) * 2); // 0 -> 1 -> 0
-      alpha += pulseStrength * 0.6;
-      lineWidth += pulseStrength * 2;
-    }
-
-    ctx.strokeStyle = this.color;
-    ctx.globalAlpha = alpha;
-    ctx.lineWidth = lineWidth;
-
-    // Add glow
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = this.color;
-
-    ctx.stroke();
-
-    // Reset
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1;
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
   }
 }
 
-function initRibbons() {
-  ribbons = [];
-  for (let i = 0; i < RIBBON_COUNT; i++) {
-    ribbons.push(new Ribbon(i));
+function initNetwork() {
+  particles = [];
+  nodes = [];
+
+  // Create Stable Nodes (The "Professionals")
+  for (let i = 0; i < NODE_COUNT; i++) {
+    nodes.push(new Entity(
+      Math.random() * width,
+      Math.random() * height,
+      true
+    ));
+  }
+
+  // Create Floating Particles (The "Students")
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push(new Entity(
+      Math.random() * width,
+      Math.random() * height,
+      false
+    ));
   }
 }
 
-function animate() {
+function animateNetwork() {
   ctx.clearRect(0, 0, width, height);
 
-  // Update Time
-  time += 1;
+  const allEntities = [...nodes, ...particles];
 
-  // Update Pulse
-  if (pulseActive) {
-    pulseProgress += 0.01;
-    if (pulseProgress > 1) {
-      pulseActive = false;
-      pulseProgress = 0;
+  // Update & Draw Entities
+  allEntities.forEach(e => {
+    e.update();
+    e.draw();
+  });
+
+  // Draw Connections (The "Bridges")
+  for (let i = 0; i < allEntities.length; i++) {
+    for (let j = i + 1; j < allEntities.length; j++) {
+      const e1 = allEntities[i];
+      const e2 = allEntities[j];
+
+      const dx = e1.x - e2.x;
+      const dy = e1.y - e2.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < CONNECTION_DIST) {
+        ctx.beginPath();
+        // Opacity based on distance
+        const alpha = 1 - (dist / CONNECTION_DIST);
+
+        // Color logic: Node-Node connections are stronger
+        if (e1.isNode && e2.isNode) {
+          ctx.strokeStyle = `rgba(56, 189, 248, ${alpha * 0.8})`; // Azure
+          ctx.lineWidth = 1;
+        } else if (e1.isNode || e2.isNode) {
+          ctx.strokeStyle = `rgba(129, 140, 248, ${alpha * 0.5})`; // Indigo mix
+          ctx.lineWidth = 0.8;
+        } else {
+          ctx.strokeStyle = `rgba(148, 163, 184, ${alpha * 0.3})`; // Slate
+          ctx.lineWidth = 0.5;
+        }
+
+        ctx.moveTo(e1.x, e1.y);
+        ctx.lineTo(e2.x, e2.y);
+        ctx.stroke();
+      }
     }
   }
 
-  // Draw Ribbons
-  ribbons.forEach(ribbon => ribbon.draw(time));
-
-  requestAnimationFrame(animate);
+  requestAnimationFrame(animateNetwork);
 }
 
 // Interactions
@@ -146,18 +147,13 @@ window.addEventListener('mouseout', () => {
   mouse.y = null;
 });
 
-window.addEventListener('click', () => {
-  pulseActive = true;
-  pulseProgress = 0;
-});
-
 window.addEventListener('resize', () => {
   resize();
 });
 
 // Init
 resize();
-animate();
+animateNetwork();
 
 
 // --- Countdown Timer (Preserved) ---
