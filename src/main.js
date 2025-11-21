@@ -189,29 +189,13 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: "0px 0px -50px 0px"
-};
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-      observer.unobserve(entry.target);
-    }
-  });
-}, observerOptions);
-
-document.querySelectorAll('.scroll-reveal').forEach(el => {
-  observer.observe(el);
-});
-
-
 // ============================================
 // MATTER.JS PHYSICS BALLS IN FOOTER
 // ============================================
 function initPhysicsBalls() {
+  if (window.physicsInitialized) return;
+  window.physicsInitialized = true;
+
   const physicsCanvas = document.getElementById('physics-canvas');
   if (!physicsCanvas || typeof Matter === 'undefined') {
     console.log('⚠️ Physics canvas or Matter.js not available');
@@ -226,10 +210,19 @@ function initPhysicsBalls() {
   const world = engine.world;
 
   const contactSection = physicsCanvas.parentElement;
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+  // Use the section's dimensions, not the window's
+  const width = contactSection.clientWidth;
+  const height = contactSection.clientHeight;
 
-  // Set canvas size explicitly
+  console.log(`📏 Physics Canvas Size: ${width}x${height}`);
+
+  if (width === 0 || height === 0) {
+    console.warn('⚠️ Contact section has 0 dimensions! Retrying in 500ms...');
+    setTimeout(initPhysicsBalls, 500);
+    return;
+  }
+
+  // Set canvas size explicitly to match container
   physicsCanvas.width = width;
   physicsCanvas.height = height;
 
@@ -240,18 +233,16 @@ function initPhysicsBalls() {
       width: width,
       height: height,
       wireframes: false,
-      background: 'transparent',
-      pixelRatio: window.devicePixelRatio
+      background: 'transparent'
     }
   });
 
   // Create walls
   const wallThickness = 50;
   const walls = [
-    Bodies.rectangle(width / 2, -wallThickness / 2, width, wallThickness, { isStatic: true, render: { visible: false } }),
-    Bodies.rectangle(width / 2, height + wallThickness / 2, width, wallThickness, { isStatic: true, render: { visible: false } }),
-    Bodies.rectangle(-wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { visible: false } }),
-    Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { visible: false } })
+    Bodies.rectangle(width / 2, height + wallThickness / 2, width, wallThickness, { isStatic: true, render: { visible: false } }), // Bottom
+    Bodies.rectangle(-wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { visible: false } }), // Left
+    Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { visible: false } }) // Right
   ];
 
   World.add(world, walls);
@@ -259,17 +250,17 @@ function initPhysicsBalls() {
   // Create balls
   const balls = [];
   const ballColor = '#a78bfa';
-  const numberOfBalls = 25;
+  const numberOfBalls = 40;
 
   for (let i = 0; i < numberOfBalls; i++) {
     const radius = Math.random() * 20 + 15;
     const x = Math.random() * (width - 100) + 50;
-    const y = -50 - (i * 30);
+    const y = Math.random() * -1000 - 200; // Start higher
 
     balls.push(Bodies.circle(x, y, radius, {
-      restitution: 0.9, // High bounce
-      friction: 0.001, // Very low friction
-      frictionAir: 0.01,
+      restitution: 0.95, // Super bouncy
+      friction: 0.001,
+      frictionAir: 0.005,
       density: 0.002,
       render: {
         fillStyle: ballColor,
@@ -281,7 +272,7 @@ function initPhysicsBalls() {
 
   World.add(world, balls);
 
-  // Add mouse control - CRITICAL FIX
+  // Add mouse control
   const mouse = Mouse.create(physicsCanvas);
   const mouseConstraint = MouseConstraint.create(engine, {
     mouse: mouse,
@@ -293,61 +284,38 @@ function initPhysicsBalls() {
     }
   });
 
-  // IMPORTANT: Add mouse constraint to world
-  World.add(world, mouseConstraint);
-
-  // Keep the mouse in sync with rendering
   render.mouse = mouse;
+  World.add(world, mouseConstraint);
 
   // Run the engine and renderer
   const runner = Runner.create();
   Runner.run(runner, engine);
   Render.run(render);
 
-  console.log('⚽ Physics balls initialized with mouse control!');
-  console.log('🎮 Try dragging the balls!');
-}
-
-// Initialize when contact section is visible
-const contactObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      initPhysicsBalls();
-      contactObserver.disconnect();
-    }
-  });
-}, { threshold: 0.1 });
-
-const contactSection = document.querySelector('#contact');
-if (contactSection) contactObserver.observe(contactSection);
-
-
-// ============================================
-// CUSTOM SCRAMBLE TEXT EFFECT (No premium plugins needed)
-// ============================================
-function scrambleText(element, finalText, duration = 1000) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-  const length = finalText.length;
-  let frame = 0;
-  const totalFrames = duration / 16; // ~60fps
-
-  const interval = setInterval(() => {
-    let scrambled = '';
-    for (let i = 0; i < length; i++) {
-      if (frame > totalFrames * (i / length)) {
-        scrambled += finalText[i];
-      } else {
-        scrambled += chars[Math.floor(Math.random() * chars.length)];
+  // Keep balls alive (gentle float/turbulence)
+  setInterval(() => {
+    balls.forEach(ball => {
+      if (ball.position.y > height - 100) {
+        // If at bottom, give a small kick up sometimes
+        if (Math.random() > 0.9) {
+          Matter.Body.applyForce(ball, ball.position, { x: (Math.random() - 0.5) * 0.05, y: -0.05 });
+        }
       }
-    }
-    element.textContent = scrambled;
-    frame++;
+    });
+  }, 1000);
 
-    if (frame > totalFrames) {
-      clearInterval(interval);
-      element.textContent = finalText;
-    }
-  }, 16);
+  // Handle resize
+  window.addEventListener('resize', () => {
+    const newWidth = contactSection.clientWidth;
+    const newHeight = contactSection.clientHeight;
+
+    physicsCanvas.width = newWidth;
+    physicsCanvas.height = newHeight;
+    render.canvas.width = newWidth;
+    render.canvas.height = newHeight;
+  });
+
+  console.log('⚽ Physics balls initialized!');
 }
 
 // ============================================
@@ -367,6 +335,11 @@ function initAnimations() {
   if (typeof gsap !== 'undefined') {
     gsap.registerPlugin(ScrollTrigger);
     console.log('✅ GSAP ScrollTrigger registered');
+
+    // Configure ScrollTrigger to use the custom scroll container
+    ScrollTrigger.defaults({
+      scroller: ".slides-container"
+    });
 
     // ============================================
     // 1) HOVER SCRAMBLE TEXT ANIMATION
@@ -432,25 +405,46 @@ function initAnimations() {
     });
     console.log('✅ Card animations initialized');
 
-    // Scroll-triggered animations for .scroll-reveal
-    const scrollElements = document.querySelectorAll('.scroll-reveal');
-    scrollElements.forEach((el) => {
-      gsap.from(el, {
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 80%',
-          end: 'bottom 20%',
-          toggleActions: 'play none none reverse',
-          onEnter: () => el.classList.add('visible'),
-          onLeave: () => el.classList.remove('visible'),
-          onEnterBack: () => el.classList.add('visible'),
-          onLeaveBack: () => el.classList.remove('visible')
-        },
-        opacity: 0,
-        y: 50,
-        duration: 1
-      });
+    // ============================================
+    // 4) GENERIC SCROLL REVEAL (Replaces old logic)
+    // ============================================
+    gsap.utils.toArray('.scroll-reveal').forEach(el => {
+      gsap.fromTo(el,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none reverse"
+          }
+        }
+      );
     });
+
+    // ============================================
+    // 5) PHYSICS BALLS TRIGGER
+    // ============================================
+    ScrollTrigger.create({
+      trigger: "#contact",
+      start: "top 80%",
+      onEnter: () => {
+        console.log("Triggering physics balls init");
+        initPhysicsBalls();
+      },
+      once: true
+    });
+
+    // Fallback: Force init if not triggered (e.g. short screen or scroll issue)
+    setTimeout(() => {
+      if (!window.physicsInitialized) {
+        console.log("⚠️ Fallback triggering physics balls");
+        initPhysicsBalls();
+      }
+    }, 2000);
 
     console.log('🎉 All animations ready!');
   } else {
