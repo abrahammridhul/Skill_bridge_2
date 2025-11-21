@@ -319,6 +319,68 @@ function initPhysicsBalls() {
 }
 
 // ============================================
+// TEXT SCRAMBLE EFFECT (Random Access)
+// ============================================
+function scrambleText(element, text, duration = 1000) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*';
+  const frameRate = 60;
+  const totalFrames = Math.round((duration / 1000) * frameRate);
+  let frame = 0;
+
+  // Create an array of indices [0, 1, 2, ... length-1]
+  const indices = Array.from({ length: text.length }, (_, i) => i);
+
+  // Shuffle the indices to determine reveal order
+  // We'll use a simple shuffle here
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  // Map each character index to a specific frame when it should be resolved
+  const resolveFrame = new Array(text.length);
+  indices.forEach((charIndex, i) => {
+    // Distribute resolution times across the duration
+    // We start resolving after 20% of animation to ensure some initial scrambling
+    const startFrame = Math.floor(totalFrames * 0.2);
+    const availableFrames = totalFrames - startFrame;
+    resolveFrame[charIndex] = startFrame + Math.floor((i / text.length) * availableFrames);
+  });
+
+  const interval = setInterval(() => {
+    let output = '';
+
+    for (let i = 0; i < text.length; i++) {
+      if (frame >= resolveFrame[i]) {
+        // Character is resolved
+        output += text[i];
+      } else {
+        // Character is still scrambling
+        // Only change the random character every 3 frames to make it less jittery
+        if (frame % 3 === 0) {
+          output += chars[Math.floor(Math.random() * chars.length)];
+        } else {
+          // Keep the previous random character (we'd need state for this, 
+          // but for simplicity just re-rolling is fine or we can just use a deterministic hash based on frame)
+          // To keep it simple and "active", we'll just re-roll. 
+          // If it's too jittery, we can slow it down.
+          output += chars[Math.floor(Math.random() * chars.length)];
+        }
+      }
+    }
+
+    element.textContent = output;
+
+    if (frame >= totalFrames) {
+      element.textContent = text;
+      clearInterval(interval);
+    }
+
+    frame++;
+  }, 1000 / frameRate);
+}
+
+// ============================================
 // WAIT FOR DOM AND LIBRARIES TO LOAD
 // ============================================
 document.addEventListener('DOMContentLoaded', function () {
