@@ -1,273 +1,137 @@
 import './style.css'
 
-// --- Advanced Circuit Board Background ---
+// --- Silk Ribbon Bridge Background ---
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
 let width, height;
-let nodes = [];
-let traces = [];
-let pulses = [];
-let ripples = [];
+let ribbons = [];
+let time = 0;
+let pulseActive = false;
+let pulseProgress = 0;
 
 // Configuration
-const GRID_SIZE = 40;
-const NODE_RADIUS = 4;
-const TRACE_COLOR = 'rgba(0, 243, 255, 0.15)'; // Faint cyan
-const ACTIVE_TRACE_COLOR = 'rgba(0, 243, 255, 0.8)'; // Bright cyan
-const COMPONENT_COLOR = '#0a0e17'; // Dark background for chips
-const TEXT_COLOR = 'rgba(0, 243, 255, 0.7)';
+const RIBBON_COUNT = 15;
+const BASE_Y = 0.6; // Vertical position (0.0 - 1.0)
+const BRIDGE_HEIGHT = 0.25; // How high the bridge arches
+const SPEED = 0.005;
 
 function resize() {
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
-  initCircuit();
+  initRibbons();
 }
 
-class Node {
-  constructor(x, y, label, type = 'point') {
-    this.x = x;
-    this.y = y;
-    this.label = label;
-    this.type = type; // 'point', 'chip', 'resistor'
-    this.connections = [];
+class Ribbon {
+  constructor(index) {
+    this.index = index;
+    this.offset = Math.random() * Math.PI * 2;
+    this.speed = SPEED + Math.random() * 0.002;
+    this.amplitude = 20 + Math.random() * 30;
+    this.frequency = 0.002 + Math.random() * 0.003;
+    this.color = index % 2 === 0 ? '#00f3ff' : '#9d00ff'; // Cyan or Purple
+    this.thickness = 1 + Math.random() * 2;
   }
 
-  draw() {
-    if (this.type === 'chip') {
-      ctx.fillStyle = COMPONENT_COLOR;
-      ctx.strokeStyle = ACTIVE_TRACE_COLOR;
-      ctx.lineWidth = 1;
-      ctx.fillRect(this.x - 15, this.y - 10, 30, 20);
-      ctx.strokeRect(this.x - 15, this.y - 10, 30, 20);
-
-      ctx.fillStyle = TEXT_COLOR;
-      ctx.font = '10px monospace';
-      ctx.fillText(this.label, this.x - 10, this.y + 4);
-    } else if (this.type === 'resistor') {
-      ctx.beginPath();
-      ctx.moveTo(this.x - 10, this.y);
-      ctx.lineTo(this.x - 5, this.y - 5);
-      ctx.lineTo(this.x + 5, this.y + 5);
-      ctx.lineTo(this.x + 10, this.y);
-      ctx.strokeStyle = ACTIVE_TRACE_COLOR;
-      ctx.stroke();
-
-      ctx.fillStyle = TEXT_COLOR;
-      ctx.font = '10px monospace';
-      ctx.fillText(this.label, this.x - 8, this.y - 8);
-    } else {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = ACTIVE_TRACE_COLOR;
-      ctx.fill();
-    }
-  }
-}
-
-class Trace {
-  constructor(startNode, endNode) {
-    this.start = startNode;
-    this.end = endNode;
-    this.path = this.calculatePath();
-    this.length = this.calculateLength();
-  }
-
-  calculatePath() {
-    // Simple orthogonal routing
-    const path = [];
-    path.push({ x: this.start.x, y: this.start.y });
-
-    // Randomly choose to go X first or Y first for variety
-    if (Math.random() > 0.5) {
-      path.push({ x: this.end.x, y: this.start.y });
-    } else {
-      path.push({ x: this.start.x, y: this.end.y });
-    }
-
-    path.push({ x: this.end.x, y: this.end.y });
-    return path;
-  }
-
-  calculateLength() {
-    let len = 0;
-    for (let i = 0; i < this.path.length - 1; i++) {
-      const p1 = this.path[i];
-      const p2 = this.path[i + 1];
-      len += Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
-    }
-    return len;
-  }
-
-  draw(glow = false) {
+  draw(t) {
     ctx.beginPath();
-    ctx.moveTo(this.path[0].x, this.path[0].y);
-    for (let i = 1; i < this.path.length; i++) {
-      ctx.lineTo(this.path[i].x, this.path[i].y);
+
+    // Start from left
+    for (let x = 0; x <= width; x += 5) {
+      // Normalized X (0.0 to 1.0)
+      const nx = x / width;
+
+      // Bridge Arch Calculation (Parabola-ish)
+      // Peak at center (nx = 0.5), zero at edges
+      const bridgeArch = Math.sin(nx * Math.PI) * height * BRIDGE_HEIGHT;
+
+      // Base Sine Wave Flow
+      const wave = Math.sin(x * this.frequency + t * this.speed + this.offset) * this.amplitude;
+
+      // Turbulence from Mouse
+      let turbulence = 0;
+      if (mouse.x != null) {
+        const dx = x - mouse.x;
+        // Y distance is approximate since we haven't calculated y yet, 
+        // but we can use the base y position
+        const dy = (height * BASE_Y - bridgeArch) - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 200) {
+          turbulence = Math.sin(dx * 0.05 + t * 0.1) * (200 - dist) * 0.2;
+        }
+      }
+
+      // Final Y Position
+      // Base Position - Bridge Arch + Wave + Turbulence
+      const y = (height * BASE_Y) - bridgeArch + wave + turbulence;
+
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
 
-    ctx.strokeStyle = glow ? ACTIVE_TRACE_COLOR : TRACE_COLOR;
-    ctx.lineWidth = glow ? 2 : 1;
-    if (glow) {
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = ACTIVE_TRACE_COLOR;
-    } else {
-      ctx.shadowBlur = 0;
+    // Pulse Effect (Click)
+    let lineWidth = this.thickness;
+    let alpha = 0.3; // Base opacity
+
+    if (pulseActive) {
+      // Pulse travels across the screen
+      // pulseProgress goes from 0 to width + padding
+      // We check if current ribbon part is near the pulse wave
+      // This is a simplification; for a true wave traveling along the line we'd need per-segment logic
+      // Instead, let's make the whole ribbon glow when the pulse passes "through" the ribbon index
+
+      // Alternative: Pulse travels horizontally
+      // We can't easily change line width per segment in one path.
+      // So we'll just brighten the whole ribbon based on time, or use a global glow
+
+      // Let's make the pulse a global brightness boost that fades out
+      const pulseStrength = Math.max(0, 1 - Math.abs(pulseProgress - 0.5) * 2); // 0 -> 1 -> 0
+      alpha += pulseStrength * 0.6;
+      lineWidth += pulseStrength * 2;
     }
+
+    ctx.strokeStyle = this.color;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = lineWidth;
+
+    // Add glow
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = this.color;
+
     ctx.stroke();
-    ctx.shadowBlur = 0; // Reset
-  }
-}
 
-class Pulse {
-  constructor(trace) {
-    this.trace = trace;
-    this.progress = 0;
-    this.speed = 2 + Math.random() * 2;
-    this.active = true;
-  }
-
-  update() {
-    this.progress += this.speed;
-    if (this.progress >= this.trace.length) {
-      this.active = false;
-    }
-  }
-
-  draw() {
-    // Calculate current position based on progress
-    let currentDist = 0;
-    let pos = { x: 0, y: 0 };
-
-    for (let i = 0; i < this.trace.path.length - 1; i++) {
-      const p1 = this.trace.path[i];
-      const p2 = this.trace.path[i + 1];
-      const segLen = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
-
-      if (this.progress >= currentDist && this.progress <= currentDist + segLen) {
-        const t = (this.progress - currentDist) / segLen;
-        pos.x = p1.x + (p2.x - p1.x) * t;
-        pos.y = p1.y + (p2.y - p1.y) * t;
-        break;
-      }
-      currentDist += segLen;
-    }
-
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = '#00f3ff';
-    ctx.fill();
+    // Reset
     ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
   }
 }
 
-function initCircuit() {
-  nodes = [];
-  traces = [];
-  pulses = [];
-
-  // Create "Bridge" shape nodes
-  const bridgeCenterY = height * 0.6;
-  const bridgeCurve = height * 0.2;
-
-  // Left side
-  nodes.push(new Node(width * 0.1, bridgeCenterY, 'IN', 'point'));
-  nodes.push(new Node(width * 0.2, bridgeCenterY - bridgeCurve * 0.5, 'R1', 'resistor'));
-  nodes.push(new Node(width * 0.3, bridgeCenterY - bridgeCurve, 'U1', 'chip')); // Core Workshop
-
-  // Center
-  nodes.push(new Node(width * 0.5, bridgeCenterY - bridgeCurve * 1.2, 'Q1', 'chip')); // AI & ML
-
-  // Right side
-  nodes.push(new Node(width * 0.7, bridgeCenterY - bridgeCurve, 'U2', 'chip')); // Mentorship
-  nodes.push(new Node(width * 0.8, bridgeCenterY - bridgeCurve * 0.5, 'C1', 'resistor')); // Communication
-  nodes.push(new Node(width * 0.9, bridgeCenterY, 'OUT', 'point'));
-
-  // Random background nodes for complexity
-  for (let i = 0; i < 15; i++) {
-    nodes.push(new Node(
-      Math.random() * width,
-      Math.random() * height,
-      `N${i}`,
-      Math.random() > 0.8 ? 'chip' : 'point'
-    ));
+function initRibbons() {
+  ribbons = [];
+  for (let i = 0; i < RIBBON_COUNT; i++) {
+    ribbons.push(new Ribbon(i));
   }
-
-  // Create connections (Traces)
-  // Connect bridge nodes sequentially
-  for (let i = 0; i < 6; i++) {
-    traces.push(new Trace(nodes[i], nodes[i + 1]));
-  }
-
-  // Connect random nodes to nearest neighbors
-  nodes.forEach(node => {
-    // Find 2 nearest neighbors
-    const neighbors = nodes
-      .filter(n => n !== node)
-      .sort((a, b) => {
-        const d1 = Math.hypot(a.x - node.x, a.y - node.y);
-        const d2 = Math.hypot(b.x - node.x, b.y - node.y);
-        return d1 - d2;
-      })
-      .slice(0, 2);
-
-    neighbors.forEach(neighbor => {
-      // Avoid duplicate traces
-      if (!traces.some(t => (t.start === node && t.end === neighbor) || (t.start === neighbor && t.end === node))) {
-        traces.push(new Trace(node, neighbor));
-      }
-    });
-  });
 }
 
-function animateCircuit() {
+function animate() {
   ctx.clearRect(0, 0, width, height);
 
-  // Draw Traces
-  traces.forEach(trace => {
-    // Check mouse proximity for glow
-    let glow = false;
-    if (mouse.x) {
-      // Simple check: is mouse near start or end node?
-      const d1 = Math.hypot(trace.start.x - mouse.x, trace.start.y - mouse.y);
-      const d2 = Math.hypot(trace.end.x - mouse.x, trace.end.y - mouse.y);
-      if (d1 < 150 || d2 < 150) glow = true;
+  // Update Time
+  time += 1;
+
+  // Update Pulse
+  if (pulseActive) {
+    pulseProgress += 0.01;
+    if (pulseProgress > 1) {
+      pulseActive = false;
+      pulseProgress = 0;
     }
-    trace.draw(glow);
-  });
-
-  // Draw Nodes
-  nodes.forEach(node => node.draw());
-
-  // Manage Pulses
-  if (Math.random() < 0.05) { // Spawn new pulse chance
-    const randomTrace = traces[Math.floor(Math.random() * traces.length)];
-    pulses.push(new Pulse(randomTrace));
   }
 
-  pulses.forEach((pulse, index) => {
-    pulse.update();
-    pulse.draw();
-    if (!pulse.active) pulses.splice(index, 1);
-  });
+  // Draw Ribbons
+  ribbons.forEach(ribbon => ribbon.draw(time));
 
-  // Manage Ripples (Click effect)
-  ripples.forEach((ripple, index) => {
-    ripple.radius += 5;
-    ripple.alpha -= 0.02;
-
-    ctx.beginPath();
-    ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(0, 243, 255, ${ripple.alpha})`;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    if (ripple.alpha <= 0) ripples.splice(index, 1);
-  });
-
-  requestAnimationFrame(animateCircuit);
+  requestAnimationFrame(animate);
 }
 
 // Interactions
@@ -277,13 +141,14 @@ window.addEventListener('mousemove', (e) => {
   mouse.y = e.y;
 });
 
-window.addEventListener('click', (e) => {
-  ripples.push({
-    x: e.x,
-    y: e.y,
-    radius: 0,
-    alpha: 1
-  });
+window.addEventListener('mouseout', () => {
+  mouse.x = null;
+  mouse.y = null;
+});
+
+window.addEventListener('click', () => {
+  pulseActive = true;
+  pulseProgress = 0;
 });
 
 window.addEventListener('resize', () => {
@@ -292,7 +157,7 @@ window.addEventListener('resize', () => {
 
 // Init
 resize();
-animateCircuit();
+animate();
 
 
 // --- Countdown Timer (Preserved) ---
