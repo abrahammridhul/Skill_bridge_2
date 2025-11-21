@@ -1,138 +1,93 @@
 import './style.css'
 
-// --- Synapse Bridge Background (Redesign 3.0) ---
+// --- Fluid Nebula Background (Redesign 4.0) ---
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
 let width, height;
-let particles = [];
-let nodes = [];
+let blobs = [];
 
 // Configuration
-const PARTICLE_COUNT = 80;
-const NODE_COUNT = 15;
-const CONNECTION_DIST = 150;
-const MOUSE_DIST = 250;
+const BLOB_COUNT = 6;
+const COLORS = ['#ff2d55', '#00f2ea', '#7000ff', '#1a0b2e']; // Coral, Cyan, Purple, Dark
 
 function resize() {
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
-  initNetwork();
+  initBlobs();
 }
 
-class Entity {
-  constructor(x, y, isNode = false) {
-    this.x = x;
-    this.y = y;
-    this.isNode = isNode;
-    // Nodes are stable, Particles float
-    this.vx = isNode ? 0 : (Math.random() - 0.5) * 0.5;
-    this.vy = isNode ? 0 : (Math.random() - 0.5) * 0.5;
-    this.size = isNode ? 3 + Math.random() * 2 : 1.5;
-    this.color = isNode ? 'rgba(56, 189, 248, 0.8)' : 'rgba(148, 163, 184, 0.5)'; // Azure vs Slate
+class Blob {
+  constructor() {
+    this.x = Math.random() * width;
+    this.y = Math.random() * height;
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = (Math.random() - 0.5) * 0.5;
+    this.radius = 200 + Math.random() * 300;
+    this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    this.angle = Math.random() * Math.PI * 2;
+    this.speed = 0.002 + Math.random() * 0.003;
   }
 
   update() {
-    if (!this.isNode) {
-      this.x += this.vx;
-      this.y += this.vy;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.angle += this.speed;
 
-      // Bounce off edges
-      if (this.x < 0 || this.x > width) this.vx *= -1;
-      if (this.y < 0 || this.y > height) this.vy *= -1;
+    // Bounce off edges (softly)
+    if (this.x < -this.radius) this.vx = Math.abs(this.vx);
+    if (this.x > width + this.radius) this.vx = -Math.abs(this.vx);
+    if (this.y < -this.radius) this.vy = Math.abs(this.vy);
+    if (this.y > height + this.radius) this.vy = -Math.abs(this.vy);
 
-      // Mouse Interaction (Magnet)
-      if (mouse.x != null) {
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+    // Mouse Interaction (Push)
+    if (mouse.x != null) {
+      const dx = this.x - mouse.x;
+      const dy = this.y - mouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < MOUSE_DIST) {
-          // Gentle pull towards mouse
-          this.x += dx * 0.02;
-          this.y += dy * 0.02;
-        }
+      if (dist < 300) {
+        this.x += dx * 0.01;
+        this.y += dy * 0.01;
       }
     }
   }
 
   draw() {
+    // We'll draw these as large radial gradients
+    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+    gradient.addColorStop(0, this.color);
+    gradient.addColorStop(1, 'rgba(26, 11, 46, 0)'); // Fade to bg color
+
+    ctx.globalCompositeOperation = 'screen'; // Blend mode for vibrant overlap
+    ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = this.color;
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.globalCompositeOperation = 'source-over'; // Reset
   }
 }
 
-function initNetwork() {
-  particles = [];
-  nodes = [];
-
-  // Create Stable Nodes (The "Professionals")
-  for (let i = 0; i < NODE_COUNT; i++) {
-    nodes.push(new Entity(
-      Math.random() * width,
-      Math.random() * height,
-      true
-    ));
-  }
-
-  // Create Floating Particles (The "Students")
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    particles.push(new Entity(
-      Math.random() * width,
-      Math.random() * height,
-      false
-    ));
+function initBlobs() {
+  blobs = [];
+  for (let i = 0; i < BLOB_COUNT; i++) {
+    blobs.push(new Blob());
   }
 }
 
-function animateNetwork() {
+function animateBlobs() {
   ctx.clearRect(0, 0, width, height);
 
-  const allEntities = [...nodes, ...particles];
+  // Draw a base dark layer
+  ctx.fillStyle = '#1a0b2e';
+  ctx.fillRect(0, 0, width, height);
 
-  // Update & Draw Entities
-  allEntities.forEach(e => {
-    e.update();
-    e.draw();
+  blobs.forEach(blob => {
+    blob.update();
+    blob.draw();
   });
 
-  // Draw Connections (The "Bridges")
-  for (let i = 0; i < allEntities.length; i++) {
-    for (let j = i + 1; j < allEntities.length; j++) {
-      const e1 = allEntities[i];
-      const e2 = allEntities[j];
-
-      const dx = e1.x - e2.x;
-      const dy = e1.y - e2.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < CONNECTION_DIST) {
-        ctx.beginPath();
-        // Opacity based on distance
-        const alpha = 1 - (dist / CONNECTION_DIST);
-
-        // Color logic: Node-Node connections are stronger
-        if (e1.isNode && e2.isNode) {
-          ctx.strokeStyle = `rgba(56, 189, 248, ${alpha * 0.8})`; // Azure
-          ctx.lineWidth = 1;
-        } else if (e1.isNode || e2.isNode) {
-          ctx.strokeStyle = `rgba(129, 140, 248, ${alpha * 0.5})`; // Indigo mix
-          ctx.lineWidth = 0.8;
-        } else {
-          ctx.strokeStyle = `rgba(148, 163, 184, ${alpha * 0.3})`; // Slate
-          ctx.lineWidth = 0.5;
-        }
-
-        ctx.moveTo(e1.x, e1.y);
-        ctx.lineTo(e2.x, e2.y);
-        ctx.stroke();
-      }
-    }
-  }
-
-  requestAnimationFrame(animateNetwork);
+  requestAnimationFrame(animateBlobs);
 }
 
 // Interactions
@@ -153,7 +108,7 @@ window.addEventListener('resize', () => {
 
 // Init
 resize();
-animateNetwork();
+animateBlobs();
 
 
 // --- Countdown Timer (Preserved) ---
