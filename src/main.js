@@ -1,268 +1,159 @@
 import './style.css'
 
-// --- Draggable Galaxy Background (Redesign 6.0) ---
-const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
+// ============================================
+// INTERACTIVE PARTICLE BACKGROUND
+// ============================================
+const canvas = document.getElementById('interactive-bg');
+const ctx = canvas ? canvas.getContext('2d') : null;
 
-let width, height;
-let stars = [];
-let planets = [];
-let meteors = [];
+let particles = [];
+let mouse = { x: null, y: null, radius: 150 };
+let animationId;
 
-// Configuration
-const STAR_COUNT = 250;
-const PLANET_COUNT = 12; // More, smaller planets
-// Space Themed Colors: Ice Blue, Gas Giant Beige, Nebula Purple, Rocky Grey
-const PLANET_COLORS = ['#A5F2F3', '#E2D1C3', '#D8B4FE', '#94A3B8'];
-
-function resize() {
-  width = canvas.width = window.innerWidth;
-  height = canvas.height = window.innerHeight;
-  initGalaxy();
-}
-
-class Star {
-  constructor() {
-    this.x = Math.random() * width;
-    this.y = Math.random() * height;
-    this.size = Math.random() * 1.5;
-    this.alpha = Math.random();
-    this.blinkSpeed = 0.002 + Math.random() * 0.005;
-  }
-
-  update() {
-    this.alpha += this.blinkSpeed;
-    if (this.alpha > 1 || this.alpha < 0) this.blinkSpeed *= -1;
+class Particle {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = Math.random() * 3 + 1;
+    this.baseX = this.x;
+    this.baseY = this.y;
+    this.density = (Math.random() * 30) + 1;
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = (Math.random() - 0.5) * 0.5;
   }
 
   draw() {
-    ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(this.alpha)})`;
+    if (!ctx) return;
+    ctx.fillStyle = 'rgba(167, 139, 250, 0.8)';
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.closePath();
     ctx.fill();
-  }
-}
-
-class Planet {
-  constructor() {
-    // Smaller planets: 5px to 15px radius
-    this.radius = 5 + Math.random() * 10;
-    this.x = Math.random() * (width - this.radius * 2) + this.radius;
-    this.y = Math.random() * (height - this.radius * 2) + this.radius;
-    this.vx = (Math.random() - 0.5) * 1.0;
-    this.vy = (Math.random() - 0.5) * 1.0;
-    this.mass = this.radius;
-    this.color = PLANET_COLORS[Math.floor(Math.random() * PLANET_COLORS.length)];
-    this.glow = 5 + Math.random() * 10;
-
-    // Dragging state
-    this.isDragging = false;
   }
 
   update() {
-    if (this.isDragging) {
-      // Follow mouse if dragging
-      this.vx = (mouse.x - this.x) * 0.2; // Add momentum based on drag speed
-      this.vy = (mouse.y - this.y) * 0.2;
-      this.x = mouse.x;
-      this.y = mouse.y;
+    // Mouse interaction
+    let dx = mouse.x - this.x;
+    let dy = mouse.y - this.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+    let forceDirectionX = dx / distance;
+    let forceDirectionY = dy / distance;
+    let maxDistance = mouse.radius;
+    let force = (maxDistance - distance) / maxDistance;
+    let directionX = forceDirectionX * force * this.density;
+    let directionY = forceDirectionY * force * this.density;
+
+    if (distance < mouse.radius) {
+      this.x -= directionX;
+      this.y -= directionY;
     } else {
-      // Normal physics
-      this.x += this.vx;
-      this.y += this.vy;
-
-      // Wall Collisions (Bounce)
-      if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
-      if (this.x + this.radius > width) { this.x = width - this.radius; this.vx *= -1; }
-      if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
-      if (this.y + this.radius > height) { this.y = height - this.radius; this.vy *= -1; }
-
-      // Friction (slow down slightly over time)
-      this.vx *= 0.995;
-      this.vy *= 0.995;
+      if (this.x !== this.baseX) {
+        let dx = this.x - this.baseX;
+        this.x -= dx / 10;
+      }
+      if (this.y !== this.baseY) {
+        let dy = this.y - this.baseY;
+        this.y -= dy / 10;
+      }
     }
-  }
 
-  draw() {
-    ctx.shadowBlur = this.isDragging ? this.glow * 2 : this.glow;
-    ctx.shadowColor = this.color;
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0; // Reset
+    // Gentle drift
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Boundary check
+    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
   }
 }
 
-class Meteor {
-  constructor() {
-    this.reset();
-  }
+function initParticles() {
+  if (!canvas || !ctx) return;
 
-  reset() {
-    this.x = Math.random() * width;
-    this.y = -100;
-    this.length = 50 + Math.random() * 100;
-    this.speed = 10 + Math.random() * 10;
-    this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.2;
-    this.active = false;
-    this.timer = Math.random() * 300;
-  }
+  particles = [];
+  const numberOfParticles = Math.floor((canvas.width * canvas.height) / 9000);
 
-  update() {
-    if (this.timer > 0) {
-      this.timer--;
-      return;
-    }
-
-    this.active = true;
-    this.x += Math.cos(this.angle) * this.speed;
-    this.y += Math.sin(this.angle) * this.speed;
-
-    if (this.y > height + 100 || this.x > width + 100) {
-      this.reset();
-    }
-  }
-
-  draw() {
-    if (!this.active) return;
-
-    const gradient = ctx.createLinearGradient(this.x, this.y, this.x - Math.cos(this.angle) * this.length, this.y - Math.sin(this.angle) * this.length);
-    gradient.addColorStop(0, '#FF1ED1');
-    gradient.addColorStop(1, 'rgba(255, 30, 209, 0)');
-
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x - Math.cos(this.angle) * this.length, this.y - Math.sin(this.angle) * this.length);
-    ctx.stroke();
+  for (let i = 0; i < numberOfParticles; i++) {
+    let x = Math.random() * canvas.width;
+    let y = Math.random() * canvas.height;
+    particles.push(new Particle(x, y));
   }
 }
 
-// Collision Detection (Elastic)
-function resolveCollisions() {
-  for (let i = 0; i < planets.length; i++) {
-    for (let j = i + 1; j < planets.length; j++) {
-      const p1 = planets[i];
-      const p2 = planets[j];
+function connectParticles() {
+  if (!ctx) return;
 
-      // Skip collision if dragging one of them (optional, but smoother)
-      if (p1.isDragging || p2.isDragging) continue;
+  for (let a = 0; a < particles.length; a++) {
+    for (let b = a; b < particles.length; b++) {
+      let dx = particles[a].x - particles[b].x;
+      let dy = particles[a].y - particles[b].y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
 
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < p1.radius + p2.radius) {
-        const angle = Math.atan2(dy, dx);
-        const sin = Math.sin(angle);
-        const cos = Math.cos(angle);
-
-        const vx1 = p1.vx * cos + p1.vy * sin;
-        const vy1 = p1.vy * cos - p1.vx * sin;
-        const vx2 = p2.vx * cos + p2.vy * sin;
-        const vy2 = p2.vy * cos - p2.vx * sin;
-
-        const vx1Final = ((p1.mass - p2.mass) * vx1 + 2 * p2.mass * vx2) / (p1.mass + p2.mass);
-        const vx2Final = ((p2.mass - p1.mass) * vx2 + 2 * p1.mass * vx1) / (p1.mass + p2.mass);
-
-        p1.vx = vx1Final * cos - vy1 * sin;
-        p1.vy = vy1 * cos + vx1Final * sin;
-        p2.vx = vx2Final * cos - vy2 * sin;
-        p2.vy = vy2 * cos + vx2Final * sin;
-
-        const overlap = (p1.radius + p2.radius - dist) / 2;
-        p1.x -= overlap * cos;
-        p1.y -= overlap * sin;
-        p2.x += overlap * cos;
-        p2.y += overlap * sin;
+      if (distance < 100) {
+        let opacity = 1 - (distance / 100);
+        ctx.strokeStyle = `rgba(167, 139, 250, ${opacity * 0.3})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(particles[a].x, particles[a].y);
+        ctx.lineTo(particles[b].x, particles[b].y);
+        ctx.stroke();
       }
     }
   }
 }
 
-function initGalaxy() {
-  stars = [];
-  planets = [];
-  meteors = [];
+function animate() {
+  if (!ctx || !canvas) return;
 
-  for (let i = 0; i < STAR_COUNT; i++) stars.push(new Star());
-  for (let i = 0; i < PLANET_COUNT; i++) planets.push(new Planet());
-  for (let i = 0; i < 3; i++) meteors.push(new Meteor());
-}
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function animateGalaxy() {
-  // Draw Background (Dark Purple Gradient)
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#0C0B2E'); // Navy
-  gradient.addColorStop(1, '#240b36'); // Deep Purple
+  // Draw gradient background
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#0C0B2E');
+  gradient.addColorStop(0.5, '#1a0b2e');
+  gradient.addColorStop(1, '#0C0B2E');
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  stars.forEach(star => {
-    star.update();
-    star.draw();
-  });
+  // Update and draw particles
+  for (let i = 0; i < particles.length; i++) {
+    particles[i].update();
+    particles[i].draw();
+  }
 
-  meteors.forEach(meteor => {
-    meteor.update();
-    meteor.draw();
-  });
-
-  planets.forEach(planet => {
-    planet.update();
-    planet.draw();
-  });
-
-  resolveCollisions();
-
-  requestAnimationFrame(animateGalaxy);
+  connectParticles();
+  animationId = requestAnimationFrame(animate);
 }
 
-// Interactions
-let mouse = { x: null, y: null };
-let draggedPlanet = null;
+function resizeCanvas() {
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  initParticles();
+}
 
-window.addEventListener('mousemove', (e) => {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
-});
+if (canvas) {
+  resizeCanvas();
 
-window.addEventListener('mousedown', (e) => {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
+  window.addEventListener('resize', resizeCanvas);
 
-  // Check if clicked on a planet
-  for (let planet of planets) {
-    const dx = mouse.x - planet.x;
-    const dy = mouse.y - planet.y;
-    if (Math.sqrt(dx * dx + dy * dy) < planet.radius + 10) { // +10 for easier grabbing
-      draggedPlanet = planet;
-      planet.isDragging = true;
-      break;
-    }
-  }
-});
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.x;
+    mouse.y = e.y;
+  });
 
-window.addEventListener('mouseup', () => {
-  if (draggedPlanet) {
-    draggedPlanet.isDragging = false;
-    draggedPlanet = null;
-  }
-});
+  window.addEventListener('mouseout', () => {
+    mouse.x = null;
+    mouse.y = null;
+  });
 
-window.addEventListener('resize', () => {
-  resize();
-});
+  animate();
+  console.log('🎨 Interactive background initialized!');
+}
 
-// Init
-resize();
-animateGalaxy();
-
-
-// --- Countdown Timer (Preserved) ---
+// ============================================
+// COUNTDOWN TIMER
+// ============================================
 const eventDate = new Date('2025-12-15T09:00:00');
 
 function updateTimer() {
@@ -315,3 +206,256 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.scroll-reveal').forEach(el => {
   observer.observe(el);
 });
+
+
+// ============================================
+// MATTER.JS PHYSICS BALLS IN FOOTER
+// ============================================
+function initPhysicsBalls() {
+  const physicsCanvas = document.getElementById('physics-canvas');
+  if (!physicsCanvas || typeof Matter === 'undefined') {
+    console.log('⚠️ Physics canvas or Matter.js not available');
+    return;
+  }
+
+  const { Engine, Render, Runner, World, Bodies, Mouse, MouseConstraint, Events } = Matter;
+
+  const engine = Engine.create({
+    gravity: { x: 0, y: 1 }
+  });
+  const world = engine.world;
+
+  const contactSection = physicsCanvas.parentElement;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  // Set canvas size explicitly
+  physicsCanvas.width = width;
+  physicsCanvas.height = height;
+
+  const render = Render.create({
+    canvas: physicsCanvas,
+    engine: engine,
+    options: {
+      width: width,
+      height: height,
+      wireframes: false,
+      background: 'transparent',
+      pixelRatio: window.devicePixelRatio
+    }
+  });
+
+  // Create walls
+  const wallThickness = 50;
+  const walls = [
+    Bodies.rectangle(width / 2, -wallThickness / 2, width, wallThickness, { isStatic: true, render: { visible: false } }),
+    Bodies.rectangle(width / 2, height + wallThickness / 2, width, wallThickness, { isStatic: true, render: { visible: false } }),
+    Bodies.rectangle(-wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { visible: false } }),
+    Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { visible: false } })
+  ];
+
+  World.add(world, walls);
+
+  // Create balls
+  const balls = [];
+  const ballColor = '#a78bfa';
+  const numberOfBalls = 25;
+
+  for (let i = 0; i < numberOfBalls; i++) {
+    const radius = Math.random() * 20 + 15;
+    const x = Math.random() * (width - 100) + 50;
+    const y = -50 - (i * 30);
+
+    balls.push(Bodies.circle(x, y, radius, {
+      restitution: 0.9, // High bounce
+      friction: 0.001, // Very low friction
+      frictionAir: 0.01,
+      density: 0.002,
+      render: {
+        fillStyle: ballColor,
+        strokeStyle: 'rgba(255, 255, 255, 0.5)',
+        lineWidth: 2
+      }
+    }));
+  }
+
+  World.add(world, balls);
+
+  // Add mouse control - CRITICAL FIX
+  const mouse = Mouse.create(physicsCanvas);
+  const mouseConstraint = MouseConstraint.create(engine, {
+    mouse: mouse,
+    constraint: {
+      stiffness: 0.2,
+      render: {
+        visible: false
+      }
+    }
+  });
+
+  // IMPORTANT: Add mouse constraint to world
+  World.add(world, mouseConstraint);
+
+  // Keep the mouse in sync with rendering
+  render.mouse = mouse;
+
+  // Run the engine and renderer
+  const runner = Runner.create();
+  Runner.run(runner, engine);
+  Render.run(render);
+
+  console.log('⚽ Physics balls initialized with mouse control!');
+  console.log('🎮 Try dragging the balls!');
+}
+
+// Initialize when contact section is visible
+const contactObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      initPhysicsBalls();
+      contactObserver.disconnect();
+    }
+  });
+}, { threshold: 0.1 });
+
+const contactSection = document.querySelector('#contact');
+if (contactSection) contactObserver.observe(contactSection);
+
+
+// ============================================
+// CUSTOM SCRAMBLE TEXT EFFECT (No premium plugins needed)
+// ============================================
+function scrambleText(element, finalText, duration = 1000) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+  const length = finalText.length;
+  let frame = 0;
+  const totalFrames = duration / 16; // ~60fps
+
+  const interval = setInterval(() => {
+    let scrambled = '';
+    for (let i = 0; i < length; i++) {
+      if (frame > totalFrames * (i / length)) {
+        scrambled += finalText[i];
+      } else {
+        scrambled += chars[Math.floor(Math.random() * chars.length)];
+      }
+    }
+    element.textContent = scrambled;
+    frame++;
+
+    if (frame > totalFrames) {
+      clearInterval(interval);
+      element.textContent = finalText;
+    }
+  }, 16);
+}
+
+// ============================================
+// WAIT FOR DOM AND LIBRARIES TO LOAD
+// ============================================
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(initAnimations, 100);
+});
+
+function initAnimations() {
+  console.log('🎬 Initializing animations...');
+  console.log('✅ GSAP available:', typeof gsap !== 'undefined');
+
+  // ============================================
+  // GSAP ANIMATIONS
+  // ============================================
+  if (typeof gsap !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+    console.log('✅ GSAP ScrollTrigger registered');
+
+    // ============================================
+    // 1) HOVER SCRAMBLE TEXT ANIMATION
+    // ============================================
+    const isDesktop = window.innerWidth > 991;
+
+    if (isDesktop) {
+      document.querySelectorAll('.scramble-hover').forEach(el => {
+        const originalText = el.textContent;
+
+        el.addEventListener('mouseenter', () => {
+          scrambleText(el, originalText, 600);
+        });
+      });
+      console.log('✅ Scramble hover on', document.querySelectorAll('.scramble-hover').length, 'elements');
+    }
+
+    // ============================================
+    // 2) SCROLL-TRIGGERED TEXT REVEAL
+    // ============================================
+    document.querySelectorAll('.scramble-title').forEach(el => {
+      const originalText = el.textContent;
+
+      // Initially hide
+      gsap.set(el, { opacity: 0, y: 20 });
+
+      ScrollTrigger.create({
+        trigger: el,
+        start: 'top 85%',
+        once: true,
+        onEnter: () => {
+          // Fade in with slide up
+          gsap.to(el, {
+            duration: 0.6,
+            opacity: 1,
+            y: 0,
+            ease: 'power2.out',
+            onComplete: () => {
+              scrambleText(el, originalText, 800);
+            }
+          });
+        }
+      });
+    });
+    console.log('✅ Scramble title on', document.querySelectorAll('.scramble-title').length, 'elements');
+
+    // ============================================
+    // 3) FADE-IN ANIMATIONS FOR CARDS
+    // ============================================
+    document.querySelectorAll('.feature-card, .card, .speaker-card').forEach((el, index) => {
+      gsap.from(el, {
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 90%',
+          once: true
+        },
+        duration: 0.8,
+        opacity: 0,
+        y: 30,
+        delay: index * 0.1,
+        ease: 'power2.out'
+      });
+    });
+    console.log('✅ Card animations initialized');
+
+    // Scroll-triggered animations for .scroll-reveal
+    const scrollElements = document.querySelectorAll('.scroll-reveal');
+    scrollElements.forEach((el) => {
+      gsap.from(el, {
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 80%',
+          end: 'bottom 20%',
+          toggleActions: 'play none none reverse',
+          onEnter: () => el.classList.add('visible'),
+          onLeave: () => el.classList.remove('visible'),
+          onEnterBack: () => el.classList.add('visible'),
+          onLeaveBack: () => el.classList.remove('visible')
+        },
+        opacity: 0,
+        y: 50,
+        duration: 1
+      });
+    });
+
+    console.log('🎉 All animations ready!');
+  } else {
+    console.error('❌ GSAP not loaded!');
+  }
+}
+
+
