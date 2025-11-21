@@ -188,8 +188,11 @@ function initGalaxy() {
 }
 
 function animateGalaxy() {
-  // Draw Background
-  ctx.fillStyle = '#0C0B2E';
+  // Draw Background (Deep Navy-Purple Gradient)
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#0C0B2E');
+  gradient.addColorStop(1, '#05041a'); // Slightly darker at bottom for depth
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
   // Draw Stars
