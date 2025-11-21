@@ -14,12 +14,24 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script type="module" crossorigin src="./assets/index-CzNrQR3p.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CVTC6I8W.css">
+
+  <!-- GSAP Core + Plugins -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- ScrambleTextPlugin is premium only - using custom solution instead -->
+
+  <!-- Matter.js Physics Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+
+  <script type="module" crossorigin src="./assets/index-DAGlqdPy.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Di4mh299.css">
 </head>
 
 <body>
-  <canvas id="bg-canvas"></canvas>
+
 
   <nav class="navbar">
     <div class="logo">SKILL BRIDGE <span class="highlight">2.0</span></div>
@@ -33,309 +45,320 @@
     <a href="#register" class="nav-cta">Register</a>
   </nav>
 
+  <!-- Interactive Background Canvas -->
+  <canvas id="interactive-bg"></canvas>
+
   <main>
-    <!-- Hero Section -->
-    <section id="hero">
-      <div class="hero-content scroll-reveal">
-        <div class="hero-glass-card">
-          <h1>SKILL BRIDGE 2.0</h1>
-          <p class="subtitle">Bridging the Gap Between Campus & Corporate</p>
-          <div class="event-date">
-            <i class="fas fa-calendar-alt"></i>
-            <span>December 15-17, 2025</span>
-          </div>
+    <div class="slides-container">
+      <!-- Hero Section -->
+      <section id="hero" class="slide">
+        <div class="hero-content scroll-reveal">
+          <div class="hero-glass-card">
+            <h1 class="scramble-title">SKILL BRIDGE 2.0</h1>
+            <p class="subtitle">Bridging the Gap Between Campus & Corporate</p>
+            <div class="event-date">
+              <i class="fas fa-calendar-alt"></i>
+              <span>December 15-17, 2025</span>
+            </div>
 
-          <div id="countdown-container">
-            <div class="time-unit">
-              <span id="days">00</span>
-              <span class="label">Days</span>
+            <div id="countdown-container">
+              <div class="time-unit">
+                <span id="days">00</span>
+                <span class="label">Days</span>
+              </div>
+              <div class="time-unit">
+                <span id="hours">00</span>
+                <span class="label">Hours</span>
+              </div>
+              <div class="time-unit">
+                <span id="minutes">00</span>
+                <span class="label">Minutes</span>
+              </div>
+              <div class="time-unit">
+                <span id="seconds">00</span>
+                <span class="label">Seconds</span>
+              </div>
             </div>
-            <div class="time-unit">
-              <span id="hours">00</span>
-              <span class="label">Hours</span>
-            </div>
-            <div class="time-unit">
-              <span id="minutes">00</span>
-              <span class="label">Minutes</span>
-            </div>
-            <div class="time-unit">
-              <span id="seconds">00</span>
-              <span class="label">Seconds</span>
-            </div>
-          </div>
 
-          <a href="#register" class="cta-button">REGISTER NOW</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- About Section -->
-    <section id="about">
-      <div class="container scroll-reveal">
-        <h2>About The Event</h2>
-        <p class="section-desc">Presented by <strong>IEEE SB CE Kallooppara</strong></p>
-        <p>Skill Bridge 2.0 is the flagship technical event of IEEE Student Branch College of Engineering Kallooppara.
-          It brings together the brightest minds for a 3-day extravaganza of workshops, tech talks, and networking
-          opportunities. Our mission is to bridge the gap between academic learning and industry demands.</p>
-        <div class="features">
-          <div class="feature-card">
-            <i class="fas fa-rocket"></i>
-            <h3>Innovation</h3>
-            <p>Explore cutting-edge technologies and methodologies.</p>
-          </div>
-          <div class="feature-card">
-            <i class="fas fa-network-wired"></i>
-            <h3>Networking</h3>
-            <p>Connect with industry leaders and like-minded peers.</p>
-          </div>
-          <div class="feature-card">
-            <i class="fas fa-chart-line"></i>
-            <h3>Growth</h3>
-            <p>Accelerate your career with hands-on workshops.</p>
+            <a href="#register" class="cta-button scramble-hover">REGISTER NOW</a>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Schedule Section -->
-    <section id="schedule">
-      <div class="container scroll-reveal">
-        <h2>Event Schedule</h2>
-        <div class="timeline">
-          <!-- Day 1 -->
-          <div class="timeline-item">
-            <div class="timeline-date">Day 1 - Dec 15</div>
-            <div class="timeline-content">
-              <h3>Kickoff & Keynotes</h3>
-              <ul>
-                <li><span>09:00 AM</span> Inauguration Ceremony</li>
-                <li><span>10:30 AM</span> Keynote: The Future of AI</li>
-                <li><span>02:00 PM</span> Workshop: Intro to Robotics</li>
-              </ul>
+      <!-- About Section -->
+      <section id="about" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">About The Event</h2>
+          <p class="section-desc">Presented by <strong>IEEE SB CE Kallooppara</strong></p>
+          <p>Skill Bridge 2.0 is the flagship technical event of IEEE Student Branch College of Engineering Kallooppara.
+            It brings together the brightest minds for a 3-day extravaganza of workshops, tech talks, and networking
+            opportunities. Our mission is to bridge the gap between academic learning and industry demands.</p>
+          <div class="features">
+            <div class="feature-card">
+              <i class="fas fa-rocket"></i>
+              <h3>Innovation</h3>
+              <p>Explore cutting-edge technologies and methodologies.</p>
             </div>
-          </div>
-          <!-- Day 2 -->
-          <div class="timeline-item">
-            <div class="timeline-date">Day 2 - Dec 16</div>
-            <div class="timeline-content">
-              <h3>Deep Dives</h3>
-              <ul>
-                <li><span>09:00 AM</span> Hackathon Begins</li>
-                <li><span>11:00 AM</span> Tech Talk: Cyber Security</li>
-                <li><span>03:00 PM</span> Networking Session</li>
-              </ul>
+            <div class="feature-card">
+              <i class="fas fa-network-wired"></i>
+              <h3>Networking</h3>
+              <p>Connect with industry leaders and like-minded peers.</p>
             </div>
-          </div>
-          <!-- Day 3 -->
-          <div class="timeline-item">
-            <div class="timeline-date">Day 3 - Dec 17</div>
-            <div class="timeline-content">
-              <h3>Finale</h3>
-              <ul>
-                <li><span>10:00 AM</span> Project Expo</li>
-                <li><span>02:00 PM</span> Closing Ceremony</li>
-                <li><span>04:00 PM</span> Cultural Night</li>
-              </ul>
+            <div class="feature-card">
+              <i class="fas fa-chart-line"></i>
+              <h3>Growth</h3>
+              <p>Accelerate your career with hands-on workshops.</p>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Workshops & Talks -->
-    <section id="workshops">
-      <div class="container scroll-reveal">
-        <h2>Workshops & Talks</h2>
-        <div class="grid-layout">
-          <div class="card">
-            <div class="card-image"
-              style="background-image: url('https://placehold.co/600x400/111/00f3ff?text=AI+Workshop');"></div>
-            <div class="card-content">
-              <h3>Generative AI Mastery</h3>
-              <p>Hands-on session building LLM applications.</p>
-              <span class="tag">Workshop</span>
+      <!-- Schedule Section -->
+      <section id="schedule" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Event Schedule</h2>
+          <div class="timeline">
+            <!-- Day 1 -->
+            <div class="timeline-item">
+              <div class="timeline-date">Day 1 - Dec 15</div>
+              <div class="timeline-content">
+                <h3>Kickoff & Keynotes</h3>
+                <ul>
+                  <li><span>09:00 AM</span> Inauguration Ceremony</li>
+                  <li><span>10:30 AM</span> Keynote: The Future of AI</li>
+                  <li><span>02:00 PM</span> Workshop: Intro to Robotics</li>
+                </ul>
+              </div>
             </div>
-          </div>
-          <div class="card">
-            <div class="card-image"
-              style="background-image: url('https://placehold.co/600x400/111/9d00ff?text=Cyber+Security');"></div>
-            <div class="card-content">
-              <h3>Ethical Hacking 101</h3>
-              <p>Learn the basics of penetration testing.</p>
-              <span class="tag">Talk</span>
+            <!-- Day 2 -->
+            <div class="timeline-item">
+              <div class="timeline-date">Day 2 - Dec 16</div>
+              <div class="timeline-content">
+                <h3>Deep Dives</h3>
+                <ul>
+                  <li><span>09:00 AM</span> Hackathon Begins</li>
+                  <li><span>11:00 AM</span> Tech Talk: Cyber Security</li>
+                  <li><span>03:00 PM</span> Networking Session</li>
+                </ul>
+              </div>
             </div>
-          </div>
-          <div class="card">
-            <div class="card-image" style="background-image: url('https://placehold.co/600x400/111/ff0055?text=IoT');">
-            </div>
-            <div class="card-content">
-              <h3>IoT & Smart Cities</h3>
-              <p>Connecting the physical world to the digital.</p>
-              <span class="tag">Workshop</span>
+            <!-- Day 3 -->
+            <div class="timeline-item">
+              <div class="timeline-date">Day 3 - Dec 17</div>
+              <div class="timeline-content">
+                <h3>Finale</h3>
+                <ul>
+                  <li><span>10:00 AM</span> Project Expo</li>
+                  <li><span>02:00 PM</span> Closing Ceremony</li>
+                  <li><span>04:00 PM</span> Cultural Night</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Speakers Section -->
-    <section id="speakers">
-      <div class="container scroll-reveal">
-        <h2>Our Speakers</h2>
-        <div class="speakers-grid">
-          <div class="speaker-card">
-            <img src="https://placehold.co/300x300/222/fff?text=Speaker+1" alt="Speaker">
-            <div class="speaker-info">
-              <h3>Dr. Sarah Connor</h3>
-              <p>AI Researcher, Tech Corp</p>
+      <!-- Workshops & Talks -->
+      <section id="workshops" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Workshops & Talks</h2>
+          <div class="grid-layout">
+            <div class="card">
+              <div class="card-image"
+                style="background-image: url('https://placehold.co/600x400/111/00f3ff?text=AI+Workshop');"></div>
+              <div class="card-content">
+                <h3>Generative AI Mastery</h3>
+                <p>Hands-on session building LLM applications.</p>
+                <span class="tag">Workshop</span>
+              </div>
             </div>
-          </div>
-          <div class="speaker-card">
-            <img src="https://placehold.co/300x300/222/fff?text=Speaker+2" alt="Speaker">
-            <div class="speaker-info">
-              <h3>John Anderson</h3>
-              <p>Security Analyst, CyberSafe</p>
+            <div class="card">
+              <div class="card-image"
+                style="background-image: url('https://placehold.co/600x400/111/9d00ff?text=Cyber+Security');"></div>
+              <div class="card-content">
+                <h3>Ethical Hacking 101</h3>
+                <p>Learn the basics of penetration testing.</p>
+                <span class="tag">Talk</span>
+              </div>
             </div>
-          </div>
-          <div class="speaker-card">
-            <img src="https://placehold.co/300x300/222/fff?text=Speaker+3" alt="Speaker">
-            <div class="speaker-info">
-              <h3>Emily Chen</h3>
-              <p>IoT Specialist, SmartHome</p>
-            </div>
-          </div>
-          <div class="speaker-card">
-            <img src="https://placehold.co/300x300/222/fff?text=Speaker+4" alt="Speaker">
-            <div class="speaker-info">
-              <h3>Michael Ross</h3>
-              <p>Full Stack Dev, WebWiz</p>
+            <div class="card">
+              <div class="card-image"
+                style="background-image: url('https://placehold.co/600x400/111/ff0055?text=IoT');">
+              </div>
+              <div class="card-content">
+                <h3>IoT & Smart Cities</h3>
+                <p>Connecting the physical world to the digital.</p>
+                <span class="tag">Workshop</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Registration Section -->
-    <section id="register">
-      <div class="container scroll-reveal">
-        <h2>Register Now</h2>
-        <div class="register-wrapper">
-          <form class="register-form">
-            <div class="form-group">
-              <label>Full Name</label>
-              <input type="text" required>
+      <!-- Speakers Section -->
+      <section id="speakers" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Our Speakers</h2>
+          <div class="speakers-grid">
+            <div class="speaker-card">
+              <img src="https://placehold.co/300x300/222/fff?text=Speaker+1" alt="Speaker">
+              <div class="speaker-info">
+                <h3>Dr. Sarah Connor</h3>
+                <p>AI Researcher, Tech Corp</p>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Email Address</label>
-              <input type="email" required>
+            <div class="speaker-card">
+              <img src="https://placehold.co/300x300/222/fff?text=Speaker+2" alt="Speaker">
+              <div class="speaker-info">
+                <h3>John Anderson</h3>
+                <p>Security Analyst, CyberSafe</p>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Phone Number</label>
-              <input type="tel" required>
+            <div class="speaker-card">
+              <img src="https://placehold.co/300x300/222/fff?text=Speaker+3" alt="Speaker">
+              <div class="speaker-info">
+                <h3>Emily Chen</h3>
+                <p>IoT Specialist, SmartHome</p>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Institution / Company</label>
-              <input type="text" required>
+            <div class="speaker-card">
+              <img src="https://placehold.co/300x300/222/fff?text=Speaker+4" alt="Speaker">
+              <div class="speaker-info">
+                <h3>Michael Ross</h3>
+                <p>Full Stack Dev, WebWiz</p>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Select Track</label>
-              <select>
-                <option>Full Access Pass</option>
-                <option>Workshops Only</option>
-                <option>Talks Only</option>
-              </select>
-            </div>
-            <button type="submit" class="submit-btn full-width">Secure My Spot</button>
-          </form>
-        </div>
-      </div>
-    </section>
-
-    <!-- Gallery Section -->
-    <section id="gallery">
-      <div class="container scroll-reveal">
-        <h2>Gallery</h2>
-        <div class="gallery-grid">
-          <img src="https://placehold.co/400x300/333/aaa?text=Event+1" alt="Gallery 1">
-          <img src="https://placehold.co/400x300/333/aaa?text=Event+2" alt="Gallery 2">
-          <img src="https://placehold.co/400x300/333/aaa?text=Event+3" alt="Gallery 3">
-          <img src="https://placehold.co/400x300/333/aaa?text=Event+4" alt="Gallery 4">
-          <img src="https://placehold.co/400x300/333/aaa?text=Event+5" alt="Gallery 5">
-          <img src="https://placehold.co/400x300/333/aaa?text=Event+6" alt="Gallery 6">
-        </div>
-      </div>
-    </section>
-
-    <!-- Sponsors Section -->
-    <section id="sponsors">
-      <div class="container scroll-reveal">
-        <h2>Our Sponsors</h2>
-        <div class="sponsors-grid">
-          <div class="sponsor-logo">LOGO 1</div>
-          <div class="sponsor-logo">LOGO 2</div>
-          <div class="sponsor-logo">LOGO 3</div>
-          <div class="sponsor-logo">LOGO 4</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Team Section -->
-    <section id="team">
-      <div class="container scroll-reveal">
-        <h2>Organizing Team</h2>
-        <div class="team-grid">
-          <div class="team-member">
-            <div class="avatar"></div>
-            <h4>Alex Doe</h4>
-            <p>Chair</p>
-          </div>
-          <div class="team-member">
-            <div class="avatar"></div>
-            <h4>Sam Smith</h4>
-            <p>Vice Chair</p>
-          </div>
-          <div class="team-member">
-            <div class="avatar"></div>
-            <h4>Jordan Lee</h4>
-            <p>Tech Lead</p>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Contact Section -->
-    <section id="contact">
-      <div class="container scroll-reveal">
-        <h2>Get In Touch</h2>
-        <div class="contact-wrapper">
-          <div class="contact-info">
-            <p><i class="fas fa-envelope"></i> info@skillbridge.event</p>
-            <p><i class="fas fa-phone"></i> +91 98765 43210</p>
-            <p><i class="fas fa-map-marker-alt"></i> College of Engineering, Kallooppara</p>
-            <div class="social-links">
-              <a href="#"><i class="fab fa-instagram"></i></a>
-              <a href="#"><i class="fab fa-linkedin"></i></a>
-              <a href="#"><i class="fab fa-twitter"></i></a>
-              <a href="#"><i class="fab fa-youtube"></i></a>
+      <!-- Registration Section -->
+      <section id="register" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Register Now</h2>
+          <div class="register-wrapper">
+            <form class="register-form">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" required>
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" required>
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" required>
+              </div>
+              <div class="form-group">
+                <label>Institution / Company</label>
+                <input type="text" required>
+              </div>
+              <div class="form-group">
+                <label>Select Track</label>
+                <select>
+                  <option>Full Access Pass</option>
+                  <option>Workshops Only</option>
+                  <option>Talks Only</option>
+                </select>
+              </div>
+              <button type="submit" class="submit-btn full-width">Secure My Spot</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gallery Section -->
+      <section id="gallery" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Gallery</h2>
+          <div class="gallery-grid">
+            <img src="https://placehold.co/400x300/333/aaa?text=Event+1" alt="Gallery 1">
+            <img src="https://placehold.co/400x300/333/aaa?text=Event+2" alt="Gallery 2">
+            <img src="https://placehold.co/400x300/333/aaa?text=Event+3" alt="Gallery 3">
+            <img src="https://placehold.co/400x300/333/aaa?text=Event+4" alt="Gallery 4">
+            <img src="https://placehold.co/400x300/333/aaa?text=Event+5" alt="Gallery 5">
+            <img src="https://placehold.co/400x300/333/aaa?text=Event+6" alt="Gallery 6">
+          </div>
+        </div>
+      </section>
+
+      <!-- Sponsors Section -->
+      <section id="sponsors" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Our Sponsors</h2>
+          <div class="sponsors-grid">
+            <div class="sponsor-logo">LOGO 1</div>
+            <div class="sponsor-logo">LOGO 2</div>
+            <div class="sponsor-logo">LOGO 3</div>
+            <div class="sponsor-logo">LOGO 4</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Team Section -->
+      <section id="team" class="slide">
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Organizing Team</h2>
+          <div class="team-grid">
+            <div class="team-member">
+              <div class="avatar"></div>
+              <h4>Alex Doe</h4>
+              <p>Chair</p>
             </div>
-            <div class="map-container">
+            <div class="team-member">
+              <div class="avatar"></div>
+              <h4>Sam Smith</h4>
+              <p>Vice Chair</p>
+            </div>
+            <div class="team-member">
+              <div class="avatar"></div>
+              <h4>Jordan Lee</h4>
+              <p>Tech Lead</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Section -->
+      <section id="contact" class="slide">
+        <!-- Physics Balls Canvas -->
+        <canvas id="physics-canvas"></canvas>
+
+        <div class="container scroll-reveal">
+          <h2 class="scramble-title">Get In Touch</h2>
+          <div class="contact-wrapper">
+            <div class="contact-info">
+              <p><i class="fas fa-envelope"></i> info@skillbridge.event</p>
+              <p><i class="fas fa-phone"></i> +91 1234567890</p>
+              <p><i class="fas fa-map-marker-alt"></i> CE Kallooppara, Kerala</p>
+              <div class="social-links">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+              </div>
+
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3936.865376637764!2d76.6296!3d9.3456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOcKwMjAnNDQuMiJOIDc2wrAzNyc0Ni42IkU!5e0!3m2!1sen!2sin!4v1631234567890!5m2!1sen!2sin"
-                width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3933.123!2d76.123!3d9.123!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOcKwMDcnMjIuOCJOIDc2wrAwNyczNC44IkU!5e0!3m2!1sen!2sin!4v1234567890"
+                width="100%" height="250" style="border:0; border-radius: 12px; margin-top: 1rem;" allowfullscreen=""
+                loading="lazy"></iframe>
+
             </div>
+            <form class="contact-form">
+              <input type="text" placeholder="Your Name" required>
+              <input type="email" placeholder="Your Email" required>
+              <textarea placeholder="Your Message" rows="5" required></textarea>
+              <button type="submit" class="cta-button">Send Message</button>
+            </form>
           </div>
-          <form class="contact-form">
-            <input type="text" placeholder="Name" required>
-            <input type="email" placeholder="Email" required>
-            <textarea placeholder="Message" rows="4" required></textarea>
-            <button type="submit" class="submit-btn">Send Message</button>
-          </form>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <footer>
+
     <p>&copy; 2025 Skill Bridge 2.0 | IEEE SB CE Kallooppara. All rights reserved.</p>
   </footer>
 
