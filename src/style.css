@@ -139,6 +139,7 @@ h2 {
   text-transform: uppercase;
   letter-spacing: 2px;
   background: linear-gradient(to right, #fff, var(--text-muted));
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

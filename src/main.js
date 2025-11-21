@@ -122,8 +122,8 @@ animateParticles();
 
 
 // --- Countdown Timer ---
-// Set event date to Nov 15, 2025
-const eventDate = new Date('2025-11-15T09:00:00');
+// Set event date to Dec 15, 2025
+const eventDate = new Date('2025-12-15T09:00:00');
 
 function updateTimer() {
   const now = new Date().getTime();
