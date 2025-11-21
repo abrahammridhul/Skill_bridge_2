@@ -39,7 +39,8 @@ html {
 
 body {
   font-family: var(--font-main);
-  background-color: var(--bg-color);
+  background-color: transparent;
+  /* Allow canvas to show through */
   color: var(--text-color);
   overflow-x: hidden;
   line-height: 1.6;

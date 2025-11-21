@@ -188,7 +188,9 @@ function initGalaxy() {
 }
 
 function animateGalaxy() {
-  ctx.clearRect(0, 0, width, height);
+  // Draw Background
+  ctx.fillStyle = '#0C0B2E';
+  ctx.fillRect(0, 0, width, height);
 
   // Draw Stars
   stars.forEach(star => {
