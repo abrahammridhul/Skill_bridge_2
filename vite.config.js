@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-    base: '/Skill_bridge_2/', // Base URL for GitHub Pages
+    base: './', // Relative base URL for better compatibility
 })
