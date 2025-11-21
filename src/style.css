@@ -1,30 +1,31 @@
 :root {
-  /* Interactive Galaxy Palette */
+  /* Draggable Galaxy Palette */
   --bg-color: #0C0B2E;
-  /* Deep Navy-Purple */
-  --bg-gradient: linear-gradient(135deg, #0C0B2E 0%, #05041a 100%);
+  /* Deep Navy Base */
+  --bg-gradient: linear-gradient(135deg, #0C0B2E 0%, #240b36 100%);
+  /* Navy to Deep Purple */
 
-  --primary-color: #FF1ED1;
-  /* Neon Pink Streaks */
-  --secondary-color: #2A135A;
-  /* Soft Purple Glow */
-  --accent-color: #00f3ff;
-  /* Cyan (kept for balance) */
+  --primary-color: #d8b4fe;
+  /* Pale Purple (Moonlight) */
+  --secondary-color: #6366f1;
+  /* Indigo */
+  --accent-color: #FF1ED1;
+  /* Neon Pink (kept for highlights) */
 
   --text-color: #ffffff;
-  --text-muted: #d1d5db;
+  --text-muted: #cbd5e1;
 
-  --glass-bg: rgba(42, 19, 90, 0.3);
-  /* Purple tinted glass */
-  --glass-border: rgba(255, 30, 209, 0.3);
-  /* Pink tinted border */
-  --card-hover-bg: rgba(42, 19, 90, 0.5);
+  --glass-bg: rgba(30, 27, 75, 0.4);
+  /* Deep Indigo Glass */
+  --glass-border: rgba(167, 139, 250, 0.2);
+  /* Light Purple Border */
+  --card-hover-bg: rgba(49, 46, 129, 0.5);
 
   --font-main: 'DM Sans', sans-serif;
   --font-display: 'Space Grotesk', sans-serif;
 
-  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  --text-glow: 0 0 15px rgba(255, 30, 209, 0.6);
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  --text-glow: 0 0 12px rgba(216, 180, 254, 0.4);
 }
 
 * {
@@ -40,7 +41,7 @@ html {
 body {
   font-family: var(--font-main);
   background-color: transparent;
-  /* Allow canvas to show through */
+  /* Canvas handles background */
   color: var(--text-color);
   overflow-x: hidden;
   line-height: 1.6;
@@ -76,7 +77,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(12, 11, 46, 0.85);
+  background: rgba(12, 11, 46, 0.9);
   backdrop-filter: blur(12px);
   z-index: 1000;
   border-bottom: 1px solid var(--glass-border);
@@ -88,7 +89,7 @@ body {
   font-weight: 700;
   letter-spacing: -1px;
   color: var(--text-color);
-  text-shadow: 0 0 10px var(--primary-color);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .highlight {
@@ -124,13 +125,13 @@ body {
   border-radius: 8px;
   font-family: var(--font-display);
   transition: all 0.3s ease;
-  box-shadow: 0 0 10px rgba(255, 30, 209, 0.2);
+  box-shadow: 0 0 10px rgba(216, 180, 254, 0.1);
 }
 
 .nav-cta:hover {
   background: var(--primary-color);
-  color: #fff;
-  box-shadow: 0 0 20px rgba(255, 30, 209, 0.6);
+  color: #0f172a;
+  box-shadow: 0 0 20px rgba(216, 180, 254, 0.4);
   transform: translateY(-2px);
 }
 
@@ -159,7 +160,7 @@ h2 {
   color: var(--text-color);
   font-weight: 700;
   letter-spacing: -1px;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .section-desc {
@@ -170,7 +171,6 @@ h2 {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 2px;
-  text-shadow: 0 0 5px rgba(255, 30, 209, 0.4);
 }
 
 /* Hero */
@@ -183,13 +183,12 @@ h2 {
 
 /* Hero Glass Card for Visibility */
 .hero-glass-card {
-  background: rgba(12, 11, 46, 0.7);
-  /* Dark semi-transparent background */
-  backdrop-filter: blur(8px);
+  background: rgba(12, 11, 46, 0.6);
+  backdrop-filter: blur(12px);
   padding: 4rem;
   border-radius: 24px;
   border: 1px solid var(--glass-border);
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.7);
   max-width: 900px;
   margin: 0 auto;
 }
@@ -202,7 +201,7 @@ h2 {
   line-height: 1;
   letter-spacing: -2px;
   color: #fff;
-  text-shadow: 0 0 20px var(--primary-color), 0 0 40px var(--secondary-color);
+  text-shadow: 0 0 20px rgba(216, 180, 254, 0.3);
 }
 
 .subtitle {
@@ -221,7 +220,6 @@ h2 {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  text-shadow: 0 0 10px rgba(255, 30, 209, 0.4);
 }
 
 /* Countdown */
@@ -234,14 +232,14 @@ h2 {
 }
 
 .time-unit {
-  background: rgba(42, 19, 90, 0.6);
+  background: rgba(30, 27, 75, 0.6);
   border: 1px solid var(--glass-border);
   padding: 1.5rem;
   border-radius: 16px;
   min-width: 110px;
   backdrop-filter: blur(10px);
   transition: transform 0.3s ease;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 .time-unit span:first-child {
@@ -269,21 +267,21 @@ h2 {
   display: inline-block;
   padding: 1.2rem 3.5rem;
   background: var(--primary-color);
-  color: #fff;
+  color: #0f172a;
   font-family: var(--font-display);
   font-weight: 700;
   text-decoration: none;
   border-radius: 50px;
   transition: all 0.3s ease;
   font-size: 1.2rem;
-  box-shadow: 0 0 20px rgba(255, 30, 209, 0.5);
+  box-shadow: 0 0 20px rgba(216, 180, 254, 0.3);
   border: 2px solid var(--primary-color);
 }
 
 .cta-button:hover {
   background: transparent;
   color: var(--primary-color);
-  box-shadow: 0 0 40px rgba(255, 30, 209, 0.8);
+  box-shadow: 0 0 40px rgba(216, 180, 254, 0.5);
   transform: scale(1.05);
 }
 
@@ -316,7 +314,7 @@ h2 {
   transform: translateY(-10px) scale(1.02);
   border-color: var(--primary-color);
   background: var(--card-hover-bg);
-  box-shadow: 0 0 30px rgba(255, 30, 209, 0.2);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
 }
 
 .feature-card i {
@@ -410,7 +408,7 @@ input,
 select,
 textarea {
   width: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--glass-border);
   padding: 1.2rem;
   color: #fff;
@@ -425,12 +423,12 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 15px rgba(255, 30, 209, 0.3);
+  box-shadow: 0 0 15px rgba(216, 180, 254, 0.2);
 }
 
 .submit-btn {
   background: var(--primary-color);
-  color: #fff;
+  color: #0f172a;
   border: none;
   padding: 1.2rem 2.5rem;
   font-weight: 700;
@@ -445,7 +443,7 @@ textarea:focus {
 .submit-btn:hover {
   background: #fff;
   color: var(--primary-color);
-  box-shadow: 0 0 20px rgba(255, 30, 209, 0.6);
+  box-shadow: 0 0 20px rgba(216, 180, 254, 0.5);
   transform: translateY(-2px);
 }
 

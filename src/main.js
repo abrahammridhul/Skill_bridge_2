@@ -1,6 +1,6 @@
 import './style.css'
 
-// --- Interactive Galaxy Background (Redesign 5.0) ---
+// --- Draggable Galaxy Background (Redesign 6.0) ---
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
@@ -10,9 +10,10 @@ let planets = [];
 let meteors = [];
 
 // Configuration
-const STAR_COUNT = 200;
-const PLANET_COUNT = 8;
-const COLORS = ['#FF1ED1', '#2A135A', '#00f3ff', '#ffffff']; // Pink, Purple, Cyan, White
+const STAR_COUNT = 250;
+const PLANET_COUNT = 12; // More, smaller planets
+// Space Themed Colors: Ice Blue, Gas Giant Beige, Nebula Purple, Rocky Grey
+const PLANET_COLORS = ['#A5F2F3', '#E2D1C3', '#D8B4FE', '#94A3B8'];
 
 function resize() {
   width = canvas.width = window.innerWidth;
@@ -24,9 +25,9 @@ class Star {
   constructor() {
     this.x = Math.random() * width;
     this.y = Math.random() * height;
-    this.size = Math.random() * 2;
+    this.size = Math.random() * 1.5;
     this.alpha = Math.random();
-    this.blinkSpeed = 0.005 + Math.random() * 0.01;
+    this.blinkSpeed = 0.002 + Math.random() * 0.005;
   }
 
   update() {
@@ -44,39 +45,46 @@ class Star {
 
 class Planet {
   constructor() {
-    this.radius = 15 + Math.random() * 30;
+    // Smaller planets: 5px to 15px radius
+    this.radius = 5 + Math.random() * 10;
     this.x = Math.random() * (width - this.radius * 2) + this.radius;
     this.y = Math.random() * (height - this.radius * 2) + this.radius;
-    this.vx = (Math.random() - 0.5) * 1.5;
-    this.vy = (Math.random() - 0.5) * 1.5;
+    this.vx = (Math.random() - 0.5) * 1.0;
+    this.vy = (Math.random() - 0.5) * 1.0;
     this.mass = this.radius;
-    this.color = COLORS[Math.floor(Math.random() * (COLORS.length - 1))]; // Exclude white
-    this.glow = 10 + Math.random() * 20;
+    this.color = PLANET_COLORS[Math.floor(Math.random() * PLANET_COLORS.length)];
+    this.glow = 5 + Math.random() * 10;
+
+    // Dragging state
+    this.isDragging = false;
   }
 
   update() {
-    this.x += this.vx;
-    this.y += this.vy;
+    if (this.isDragging) {
+      // Follow mouse if dragging
+      this.vx = (mouse.x - this.x) * 0.2; // Add momentum based on drag speed
+      this.vy = (mouse.y - this.y) * 0.2;
+      this.x = mouse.x;
+      this.y = mouse.y;
+    } else {
+      // Normal physics
+      this.x += this.vx;
+      this.y += this.vy;
 
-    // Wall Collisions
-    if (this.x - this.radius < 0 || this.x + this.radius > width) this.vx *= -1;
-    if (this.y - this.radius < 0 || this.y + this.radius > height) this.vy *= -1;
+      // Wall Collisions (Bounce)
+      if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
+      if (this.x + this.radius > width) { this.x = width - this.radius; this.vx *= -1; }
+      if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
+      if (this.y + this.radius > height) { this.y = height - this.radius; this.vy *= -1; }
 
-    // Mouse Interaction (Repulsion)
-    if (mouse.x != null) {
-      const dx = this.x - mouse.x;
-      const dy = this.y - mouse.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 200) {
-        const force = (200 - dist) / 200;
-        this.vx += (dx / dist) * force * 0.5;
-        this.vy += (dy / dist) * force * 0.5;
-      }
+      // Friction (slow down slightly over time)
+      this.vx *= 0.995;
+      this.vy *= 0.995;
     }
   }
 
   draw() {
-    ctx.shadowBlur = this.glow;
+    ctx.shadowBlur = this.isDragging ? this.glow * 2 : this.glow;
     ctx.shadowColor = this.color;
     ctx.fillStyle = this.color;
     ctx.beginPath();
@@ -96,9 +104,9 @@ class Meteor {
     this.y = -100;
     this.length = 50 + Math.random() * 100;
     this.speed = 10 + Math.random() * 10;
-    this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.2; // Mostly diagonal down-right
+    this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.2;
     this.active = false;
-    this.timer = Math.random() * 200; // Random delay
+    this.timer = Math.random() * 300;
   }
 
   update() {
@@ -120,8 +128,8 @@ class Meteor {
     if (!this.active) return;
 
     const gradient = ctx.createLinearGradient(this.x, this.y, this.x - Math.cos(this.angle) * this.length, this.y - Math.sin(this.angle) * this.length);
-    gradient.addColorStop(0, '#FF1ED1'); // Neon Pink Head
-    gradient.addColorStop(1, 'rgba(255, 30, 209, 0)'); // Transparent Tail
+    gradient.addColorStop(0, '#FF1ED1');
+    gradient.addColorStop(1, 'rgba(255, 30, 209, 0)');
 
     ctx.strokeStyle = gradient;
     ctx.lineWidth = 2;
@@ -140,33 +148,31 @@ function resolveCollisions() {
       const p1 = planets[i];
       const p2 = planets[j];
 
+      // Skip collision if dragging one of them (optional, but smoother)
+      if (p1.isDragging || p2.isDragging) continue;
+
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < p1.radius + p2.radius) {
-        // Collision detected
         const angle = Math.atan2(dy, dx);
         const sin = Math.sin(angle);
         const cos = Math.cos(angle);
 
-        // Rotate velocities
         const vx1 = p1.vx * cos + p1.vy * sin;
         const vy1 = p1.vy * cos - p1.vx * sin;
         const vx2 = p2.vx * cos + p2.vy * sin;
         const vy2 = p2.vy * cos - p2.vx * sin;
 
-        // Elastic collision formula
         const vx1Final = ((p1.mass - p2.mass) * vx1 + 2 * p2.mass * vx2) / (p1.mass + p2.mass);
         const vx2Final = ((p2.mass - p1.mass) * vx2 + 2 * p1.mass * vx1) / (p1.mass + p2.mass);
 
-        // Update velocities (rotate back)
         p1.vx = vx1Final * cos - vy1 * sin;
         p1.vy = vy1 * cos + vx1Final * sin;
         p2.vx = vx2Final * cos - vy2 * sin;
         p2.vy = vy2 * cos + vx2Final * sin;
 
-        // Separate planets to prevent sticking
         const overlap = (p1.radius + p2.radius - dist) / 2;
         p1.x -= overlap * cos;
         p1.y -= overlap * sin;
@@ -184,30 +190,27 @@ function initGalaxy() {
 
   for (let i = 0; i < STAR_COUNT; i++) stars.push(new Star());
   for (let i = 0; i < PLANET_COUNT; i++) planets.push(new Planet());
-  for (let i = 0; i < 3; i++) meteors.push(new Meteor()); // 3 active meteors max
+  for (let i = 0; i < 3; i++) meteors.push(new Meteor());
 }
 
 function animateGalaxy() {
-  // Draw Background (Deep Navy-Purple Gradient)
+  // Draw Background (Dark Purple Gradient)
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#0C0B2E');
-  gradient.addColorStop(1, '#05041a'); // Slightly darker at bottom for depth
+  gradient.addColorStop(0, '#0C0B2E'); // Navy
+  gradient.addColorStop(1, '#240b36'); // Deep Purple
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  // Draw Stars
   stars.forEach(star => {
     star.update();
     star.draw();
   });
 
-  // Update & Draw Meteors
   meteors.forEach(meteor => {
     meteor.update();
     meteor.draw();
   });
 
-  // Update & Draw Planets
   planets.forEach(planet => {
     planet.update();
     planet.draw();
@@ -220,14 +223,34 @@ function animateGalaxy() {
 
 // Interactions
 let mouse = { x: null, y: null };
+let draggedPlanet = null;
+
 window.addEventListener('mousemove', (e) => {
-  mouse.x = e.x;
-  mouse.y = e.y;
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
 });
 
-window.addEventListener('mouseout', () => {
-  mouse.x = null;
-  mouse.y = null;
+window.addEventListener('mousedown', (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+
+  // Check if clicked on a planet
+  for (let planet of planets) {
+    const dx = mouse.x - planet.x;
+    const dy = mouse.y - planet.y;
+    if (Math.sqrt(dx * dx + dy * dy) < planet.radius + 10) { // +10 for easier grabbing
+      draggedPlanet = planet;
+      planet.isDragging = true;
+      break;
+    }
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  if (draggedPlanet) {
+    draggedPlanet.isDragging = false;
+    draggedPlanet = null;
+  }
 });
 
 window.addEventListener('resize', () => {
